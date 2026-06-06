@@ -171,7 +171,7 @@ public static class AudioFileUtil
 
     private static async Task RunAsync(string exe, string args, CancellationToken ct)
     {
-        var psi = new ProcessStartInfo(exe, args)
+        var psi = new ProcessStartInfo(exe, "-hide_banner " + args)
         {
             RedirectStandardError = true,
             UseShellExecute = false,
