@@ -27,28 +27,17 @@ public static class AudioFileUtil
 
         if (ext is ".mov" or ".mp4")
         {
-            // Zoom recordings: moov atom at end + variable resolution/fps mid-stream.
-            //
-            // Pass 1 (remux): normalize the container into a clean MP4.
-            //   -probesize/-analyzeduration 100M : scan enough data to find streams in large files
-            //   +igndts                          : ignore invalid decode timestamps Zoom embeds
-            //   +genpts+discardcorrupt           : regenerate PTS, skip corrupt packets
-            //   -err_detect ignore_err           : tolerate container-level errors during copy
-            //   -c copy -movflags +faststart     : stream-copy (no decode), moov at front
-            //
-            // Pass 2 (extract): pull audio from the clean copy.
-            //
-            // If pass 1 fails (e.g. moov truly unreadable), fall back to a single-pass
-            // extraction that forces the MOV demuxer with -f mov, bypassing format detection.
-
+            // Zoom .mov files: moov atom at end + variable resolution/fps.
+            // Pass 1: remux to a clean MP4 — broad stream copy (-map 0 -c copy) with
+            //         -movflags faststart writes moov at the front without decoding anything.
+            // Pass 2: extract audio from the normalized copy.
+            // Fallback: if the remux itself fails, attempt direct audio extraction.
             var tempPath = Path.ChangeExtension(
                 Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), ".mp4");
             try
             {
                 var remuxOk = await TryRunAsync(FindFfmpeg(),
-                    $"-y -probesize 100M -analyzeduration 100M " +
-                    $"-fflags +genpts+discardcorrupt+igndts+ignidx -err_detect ignore_err " +
-                    $"-i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
+                    $"-y -i \"{videoPath}\" -map 0 -c copy -movflags +faststart \"{tempPath}\"", ct);
 
                 if (remuxOk)
                 {
@@ -57,11 +46,8 @@ public static class AudioFileUtil
                 }
                 else
                 {
-                    // Remux failed — force MOV demuxer, ignore index, extract audio directly
                     await RunAsync(FindFfmpeg(),
-                        $"-y -probesize 100M -analyzeduration 100M " +
-                        $"-f mov -fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
-                        $"-ignidx -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                        $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
                 }
             }
             finally
