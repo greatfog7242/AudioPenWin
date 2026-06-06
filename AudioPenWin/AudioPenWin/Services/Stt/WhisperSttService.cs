@@ -127,12 +127,7 @@ public class WhisperSttService : ISttProvider
     {
         "en-us" or "en-gb" or "en" => "en",
         "zh"                       => "zh",
-        "es-es" or "es"            => "es",
-        "fr-fr" or "fr"            => "fr",
-        "de-de" or "de"            => "de",
-        "ja-jp" or "ja"            => "ja",
-        "ko"                       => "ko",
-        "pt-br" or "pt"            => "pt",
+        "auto"                     => "auto",
         _                          => "auto"
     };
 }

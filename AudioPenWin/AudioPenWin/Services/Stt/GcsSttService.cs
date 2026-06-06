@@ -38,7 +38,7 @@ public class GcsSttService : ISttProvider
                 Encoding = "LINEAR16",
                 SampleRateHertz = 16000,
                 AudioChannelCount = 1,
-                LanguageCode = language,
+                LanguageCode = language == "auto" ? "en-US" : language,
                 EnableWordTimeOffsets = true,
                 EnableAutomaticPunctuation = true,
                 DiarizationConfig = enableDiarization ? new GcsDiarizationConfig

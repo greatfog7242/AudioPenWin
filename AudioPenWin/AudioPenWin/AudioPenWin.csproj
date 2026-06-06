@@ -18,6 +18,7 @@
   <ItemGroup>
     <Content Include="Assets\icon.ico" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets\icon.png" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="Assets\ffmpeg.exe" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250205002" />

@@ -23,8 +23,35 @@ public static class AudioFileUtil
 
     public static async Task ExtractAudioFromVideoAsync(string videoPath, string outputM4aPath, CancellationToken ct = default)
     {
-        var args = $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"";
-        await RunAsync(FindFfmpeg(), args, ct);
+        var ext = Path.GetExtension(videoPath).ToLowerInvariant();
+
+        if (ext is ".mov" or ".mp4")
+        {
+            // Zoom recordings: moov atom at end of file + variable resolution/fps mid-stream.
+            // Pass 1: remux with permissive flags — reads moov from tail, discards corrupt
+            //         packets, copies streams without decoding (so variable layout is invisible),
+            //         and writes a clean MP4 with moov at the front (faststart).
+            // Pass 2: extract audio from the normalized file with a straightforward command.
+            var tempPath = Path.ChangeExtension(
+                Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), ".mp4");
+            try
+            {
+                await RunAsync(FindFfmpeg(),
+                    $"-y -fflags +genpts+discardcorrupt -err_detect ignore_err " +
+                    $"-i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
+                await RunAsync(FindFfmpeg(),
+                    $"-y -i \"{tempPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+        }
+        else
+        {
+            var args = $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"";
+            await RunAsync(FindFfmpeg(), args, ct);
+        }
     }
 
     public static async Task ExtractPcmAsync(string inputPath, string outputPcmPath, CancellationToken ct = default)

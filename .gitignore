@@ -26,6 +26,9 @@ Thumbs.db
 *.bin
 *.bin.tmp
 
+# FFmpeg binary (download separately from ffmpeg.org)
+**/Assets/ffmpeg.exe
+
 # Temporary build diagnostics
 build.log
 xaml_stdout.txt

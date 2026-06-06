@@ -40,14 +40,9 @@
             <TextBlock Text="LANGUAGE" Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
             <ComboBox x:Name="CbLanguage" MinWidth="240" SelectionChanged="Language_Changed">
-                <ComboBoxItem Content="English (en-US)"           Tag="en-US"/>
-                <ComboBoxItem Content="Chinese Simplified (zh)"   Tag="zh"/>
-                <ComboBoxItem Content="Spanish (es-ES)"           Tag="es-ES"/>
-                <ComboBoxItem Content="French (fr-FR)"            Tag="fr-FR"/>
-                <ComboBoxItem Content="German (de-DE)"            Tag="de-DE"/>
-                <ComboBoxItem Content="Japanese (ja-JP)"          Tag="ja-JP"/>
-                <ComboBoxItem Content="Korean (ko)"               Tag="ko"/>
-                <ComboBoxItem Content="Portuguese (pt-BR)"        Tag="pt-BR"/>
+                <ComboBoxItem Content="English"      Tag="en-US"/>
+                <ComboBoxItem Content="Chinese"      Tag="zh"/>
+                <ComboBoxItem Content="Auto-detect"  Tag="auto"/>
             </ComboBox>
 
             <!-- ── API Keys ── -->

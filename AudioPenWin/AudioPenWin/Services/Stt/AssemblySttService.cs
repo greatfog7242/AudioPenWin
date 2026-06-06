@@ -93,13 +93,18 @@ public class AssemblySttService : ISttProvider
         }).ToList();
     }
 
-    private static string NormalizeLanguage(string lang) =>
-        lang.Contains('-') ? lang[..lang.IndexOf('-')] : lang;
+    // Returns null for "auto" so the field is omitted and Universal-2 auto-detects.
+    private static string? NormalizeLanguage(string lang)
+    {
+        if (lang == "auto") return null;
+        return lang.Contains('-') ? lang[..lang.IndexOf('-')] : lang;
+    }
 
     // ── Models ──────────────────────────────────────────────────────────────
     private class AaiTranscriptRequest
     {
         public string AudioUrl { get; set; } = null!;
+        public string SpeechModel { get; set; } = "universal-2";
         public string? LanguageCode { get; set; }
         public bool SpeakerLabels { get; set; }
         public int? SpeakersExpected { get; set; }
