@@ -1,0 +1,9 @@
+<Window
+    x:Class="AudioPenWin.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="AudioPen">
+    <Grid>
+        <Frame x:Name="RootFrame" NavigationFailed="RootFrame_NavigationFailed"/>
+    </Grid>
+</Window>

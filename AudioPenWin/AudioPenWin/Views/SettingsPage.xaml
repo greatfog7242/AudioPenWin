@@ -1,0 +1,102 @@
+<Page
+    x:Class="AudioPenWin.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="4" MaxWidth="640" HorizontalAlignment="Left">
+
+            <!-- Header row -->
+            <Grid Margin="0,8,0,16">
+                <Button Content="← Back" HorizontalAlignment="Left" VerticalAlignment="Center" Click="Back_Click"/>
+                <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- ── STT Provider ── -->
+            <TextBlock Text="TRANSCRIPTION PROVIDER" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,12,0,6"/>
+            <RadioButton x:Name="RbGcs"        Content="Google Cloud STT"               GroupName="SttProvider" Tag="GCS"        Checked="SttProvider_Checked"/>
+            <RadioButton x:Name="RbAssemblyAi" Content="AssemblyAI"                     GroupName="SttProvider" Tag="AssemblyAI" Checked="SttProvider_Checked"/>
+            <RadioButton x:Name="RbWhisper"    Content="Whisper (local, offline)"       GroupName="SttProvider" Tag="Whisper"    Checked="SttProvider_Checked"/>
+
+            <!-- ── Whisper Model ── -->
+            <TextBlock Text="WHISPER MODEL" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <StackPanel x:Name="WhisperModelPanel" Spacing="8">
+                <TextBlock x:Name="TbWhisperStatus"
+                           Text="{x:Bind ViewModel.WhisperModelStatus, Mode=OneWay}"
+                           Style="{StaticResource BodyTextBlockStyle}"/>
+                <ProgressBar x:Name="WhisperProgress"
+                             Minimum="0" Maximum="1"
+                             Value="{x:Bind ViewModel.WhisperModelProgress, Mode=OneWay}"
+                             Visibility="Collapsed"/>
+                <Button x:Name="BtnDownloadModel"
+                        Content="Download model (~150 MB)"
+                        Click="DownloadModel_Click"/>
+            </StackPanel>
+
+            <!-- ── Language ── -->
+            <TextBlock Text="LANGUAGE" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <ComboBox x:Name="CbLanguage" MinWidth="240" SelectionChanged="Language_Changed">
+                <ComboBoxItem Content="English (en-US)"           Tag="en-US"/>
+                <ComboBoxItem Content="Chinese Simplified (zh)"   Tag="zh"/>
+                <ComboBoxItem Content="Spanish (es-ES)"           Tag="es-ES"/>
+                <ComboBoxItem Content="French (fr-FR)"            Tag="fr-FR"/>
+                <ComboBoxItem Content="German (de-DE)"            Tag="de-DE"/>
+                <ComboBoxItem Content="Japanese (ja-JP)"          Tag="ja-JP"/>
+                <ComboBoxItem Content="Korean (ko)"               Tag="ko"/>
+                <ComboBoxItem Content="Portuguese (pt-BR)"        Tag="pt-BR"/>
+            </ComboBox>
+
+            <!-- ── API Keys ── -->
+            <TextBlock Text="API KEYS" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <TextBlock Text="Google Cloud STT" Margin="0,0,0,4"/>
+            <PasswordBox x:Name="PbGcs"
+                         PasswordRevealMode="Peek"
+                         PlaceholderText="Enter GCS API key"
+                         MinWidth="320"
+                         PasswordChanged="GcsKey_Changed"/>
+            <TextBlock Text="AssemblyAI" Margin="0,10,0,4"/>
+            <PasswordBox x:Name="PbAssemblyAi"
+                         PasswordRevealMode="Peek"
+                         PlaceholderText="Enter AssemblyAI API key"
+                         MinWidth="320"
+                         PasswordChanged="AssemblyAiKey_Changed"/>
+
+            <!-- ── Output Folder ── -->
+            <TextBlock Text="OUTPUT FOLDER" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox x:Name="TbOutputFolder"
+                         IsReadOnly="True"
+                         MinWidth="280"
+                         PlaceholderText="Default: same folder as recording"/>
+                <Button Content="Browse…" Click="BrowseFolder_Click"/>
+            </StackPanel>
+
+            <!-- ── Diarization ── -->
+            <TextBlock Text="SPEAKER DIARIZATION" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <ToggleSwitch x:Name="TsDiarization" Header="Enable speaker labels" Toggled="Diarization_Toggled"/>
+            <StackPanel x:Name="SpeakerCountPanel" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                <TextBlock Text="Number of speakers" VerticalAlignment="Center"/>
+                <NumberBox x:Name="NbSpeakers" Minimum="1" Maximum="10" SpinButtonPlacementMode="Compact" ValueChanged="SpeakerCount_Changed"/>
+            </StackPanel>
+
+            <!-- ── Cost Summary ── -->
+            <TextBlock Text="COST SUMMARY" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <TextBlock x:Name="TbCost" Text="{x:Bind ViewModel.CostSummary, Mode=OneWay}"/>
+
+            <!-- ── About ── -->
+            <TextBlock Text="ABOUT" Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,16,0,6"/>
+            <TextBlock Text="AudioPen for Windows — v1.0.0"/>
+
+            <Rectangle Height="32"/>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
