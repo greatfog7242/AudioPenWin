@@ -14,4 +14,5 @@ public class RecordingEntity
     public int SpeakerCount { get; set; }
     public int WordCount { get; set; }
     public int CostCents { get; set; }
+    public string ErrorMessage { get; set; } = "";
 }

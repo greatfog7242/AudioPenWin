@@ -90,6 +90,7 @@
                 <!-- Failed placeholder -->
                 <StackPanel x:Name="FailedPanel"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10"
+                            MaxWidth="480" Margin="24,0"
                             Visibility="Collapsed">
                     <FontIcon Glyph="&#xE730;" FontSize="44"
                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
@@ -97,6 +98,14 @@
                     <TextBlock Text="Transcription failed"
                                Style="{StaticResource SubtitleTextBlockStyle}"
                                HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="TbErrorMessage"
+                               Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                               Visibility="{x:Bind ViewModel.HasErrorMessage, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"/>
                     <TextBlock Text="Tap Retry above to try again"
                                Style="{StaticResource CaptionTextBlockStyle}"
                                HorizontalAlignment="Center"

@@ -48,6 +48,8 @@ public class AppDatabase
                 Confidence  REAL    NOT NULL DEFAULT 0
             )
             """);
+        // Migration: add ErrorMessage column if it doesn't exist yet
+        try { conn.Execute("ALTER TABLE recordings ADD COLUMN ErrorMessage TEXT NOT NULL DEFAULT ''"); } catch { }
         conn.Execute("PRAGMA foreign_keys = ON");
         conn.Execute("""
             CREATE INDEX IF NOT EXISTS idx_segments_recording_id

@@ -47,6 +47,14 @@ public class RecordingDao
         await conn.ExecuteAsync("UPDATE recordings SET Status = @Status WHERE Id = @Id", new { Id = id, Status = status });
     }
 
+    public async Task UpdateFailedAsync(string id, string errorMessage)
+    {
+        using var conn = _db.CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE recordings SET Status = 'FAILED', ErrorMessage = @Msg WHERE Id = @Id",
+            new { Id = id, Msg = errorMessage });
+    }
+
     public async Task UpdateAsync(RecordingEntity r)
     {
         using var conn = _db.CreateConnection();

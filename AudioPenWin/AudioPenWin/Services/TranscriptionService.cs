@@ -83,9 +83,9 @@ public class TranscriptionService
             await _recordings.UpdateAsync(recording);
         }
         catch (OperationCanceledException) { }
-        catch
+        catch (Exception ex)
         {
-            try { await _recordings.UpdateStatusAsync(recordingId, "FAILED"); } catch { }
+            try { await _recordings.UpdateFailedAsync(recordingId, ex.Message); } catch { }
         }
         finally
         {

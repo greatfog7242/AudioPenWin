@@ -53,6 +53,8 @@ public class PlaybackViewModel : INotifyPropertyChanged
         _ => "Pending…"
     };
 
+    public string ErrorMessage { get; private set; } = "";
+    public bool HasErrorMessage => !string.IsNullOrEmpty(ErrorMessage);
     public bool ShowRetry => Status is "FAILED" or "PENDING";
     public bool ShowTranscribingSpinner => Status is "PENDING" or "PROCESSING";
     public bool ShowFailedPlaceholder => Status == "FAILED";
@@ -75,6 +77,7 @@ public class PlaybackViewModel : INotifyPropertyChanged
 
         Title = Recording.Title;
         Status = Recording.Status;
+        ErrorMessage = Recording.ErrorMessage;
         Notify(nameof(IsVideo));
 
         Words.Clear();

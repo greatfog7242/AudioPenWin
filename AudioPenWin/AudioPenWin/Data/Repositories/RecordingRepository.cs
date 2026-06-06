@@ -14,6 +14,7 @@ public class RecordingRepository
     public Task<IEnumerable<RecordingEntity>> GetAllAsync() => _dao.GetAllAsync();
     public Task<IEnumerable<RecordingEntity>> SearchAsync(string query) => _dao.SearchAsync(query);
     public Task UpdateStatusAsync(string id, string status) => _dao.UpdateStatusAsync(id, status);
+    public Task UpdateFailedAsync(string id, string errorMessage) => _dao.UpdateFailedAsync(id, errorMessage);
     public Task UpdateAsync(RecordingEntity recording) => _dao.UpdateAsync(recording);
     public Task DeleteAsync(string id) => _dao.DeleteAsync(id);
     public Task<IEnumerable<CostRecord>> GetCostSummaryAsync() => _dao.GetCostSummaryAsync();
