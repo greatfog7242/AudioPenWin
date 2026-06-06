@@ -48,7 +48,7 @@ public static class AudioFileUtil
                 var remuxOk = await TryRunAsync(FindFfmpeg(),
                     $"-y -probesize 100M -analyzeduration 100M " +
                     $"-fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
-                    $"-i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
+                    $"-ignidx -i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
 
                 if (remuxOk)
                 {
@@ -57,11 +57,11 @@ public static class AudioFileUtil
                 }
                 else
                 {
-                    // Remux failed — force MOV demuxer and extract audio directly
+                    // Remux failed — force MOV demuxer, ignore index, extract audio directly
                     await RunAsync(FindFfmpeg(),
                         $"-y -probesize 100M -analyzeduration 100M " +
                         $"-f mov -fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
-                        $"-i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                        $"-ignidx -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
                 }
             }
             finally
