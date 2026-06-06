@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         Title = "AudioPen";
         SetMinSize(400, 600);
+        Navigate(typeof(HomePage));
     }
 
     public void Navigate(Type pageType, object? parameter = null)
