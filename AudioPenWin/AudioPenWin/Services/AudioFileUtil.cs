@@ -47,8 +47,8 @@ public static class AudioFileUtil
             {
                 var remuxOk = await TryRunAsync(FindFfmpeg(),
                     $"-y -probesize 100M -analyzeduration 100M " +
-                    $"-fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
-                    $"-ignidx -i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
+                    $"-fflags +genpts+discardcorrupt+igndts+ignidx -err_detect ignore_err " +
+                    $"-i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
 
                 if (remuxOk)
                 {
