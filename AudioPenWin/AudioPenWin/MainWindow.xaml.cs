@@ -33,6 +33,11 @@ public sealed partial class MainWindow : Window
         var hwnd = WindowNative.GetWindowHandle(this);
         var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWindow = AppWindow.GetFromWindowId(windowId);
+
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "icon.ico");
+        if (File.Exists(iconPath))
+            appWindow.SetIcon(iconPath);
+
         if (appWindow.Presenter is OverlappedPresenter overlapped)
         {
             overlapped.IsResizable = true;
