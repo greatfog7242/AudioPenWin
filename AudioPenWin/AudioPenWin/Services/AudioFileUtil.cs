@@ -27,17 +27,21 @@ public static class AudioFileUtil
 
         if (ext is ".mov" or ".mp4")
         {
-            // Zoom .mov files: moov atom at end + variable resolution/fps.
-            // Pass 1: remux to a clean MP4 — broad stream copy (-map 0 -c copy) with
-            //         -movflags faststart writes moov at the front without decoding anything.
+            // Zoom recordings often start with a QuickTime `wide` atom (8 bytes) before an
+            // extended-size `mdat`, so FFmpeg's format prober scores the file at 1 ("low
+            // confidence") and then the MOV demuxer fails to find moov. The fix is to read
+            // the magic bytes ourselves and pass an explicit -f <format> to bypass the prober.
+            var fmt = await SniffContainerFormatAsync(videoPath);
+
+            // Pass 1: remux into a clean MP4 with moov at the front (stream-copy, no decode).
             // Pass 2: extract audio from the normalized copy.
-            // Fallback: if the remux itself fails, attempt direct audio extraction.
+            // Fallback: if remux fails, attempt direct audio extraction with the same -f hint.
             var tempPath = Path.ChangeExtension(
                 Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), ".mp4");
             try
             {
                 var remuxOk = await TryRunAsync(FindFfmpeg(),
-                    $"-y -i \"{videoPath}\" -map 0 -c copy -movflags +faststart \"{tempPath}\"", ct);
+                    $"-y -f {fmt} -i \"{videoPath}\" -map 0 -c copy -movflags +faststart \"{tempPath}\"", ct);
 
                 if (remuxOk)
                 {
@@ -47,7 +51,7 @@ public static class AudioFileUtil
                 else
                 {
                     await RunAsync(FindFfmpeg(),
-                        $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                        $"-y -f {fmt} -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
                 }
             }
             finally
@@ -59,6 +63,44 @@ public static class AudioFileUtil
         {
             await RunAsync(FindFfmpeg(),
                 $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+        }
+    }
+
+    // Reads the first 12 bytes to identify the real container format, so we can pass
+    // an explicit -f flag and skip FFmpeg's unreliable low-score format detection.
+    private static async Task<string> SniffContainerFormatAsync(string filePath)
+    {
+        try
+        {
+            var hdr = new byte[12];
+            await using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var n = await fs.ReadAsync(hdr.AsMemory(0, 12));
+            if (n < 8) return "mov";
+
+            // MPEG-TS: 188-byte packets; sync byte 0x47 at offset 0 (or offset 4 for M2TS)
+            if (hdr[0] == 0x47 || hdr[4] == 0x47) return "mpegts";
+
+            // AVI: RIFF....AVI
+            if (hdr[0] == 0x52 && hdr[1] == 0x49 && hdr[2] == 0x46 && hdr[3] == 0x46) return "avi";
+
+            // MKV / WebM
+            if (hdr[0] == 0x1A && hdr[1] == 0x45 && hdr[2] == 0xDF && hdr[3] == 0xA3) return "matroska";
+
+            // QuickTime / MP4 family: atom type sits at bytes [4..8].
+            // Recognised first atoms: ftyp wide free mdat moov skip junk pnot uuid
+            // Also covers extended-size atoms where bytes [0..4] == 00 00 00 01.
+            var atom = Encoding.ASCII.GetString(hdr, 4, 4);
+            if (atom is "ftyp" or "wide" or "free" or "mdat" or "moov" or
+                        "skip" or "junk" or "pnot" or "uuid" or "styp" or "sidx")
+                return "mov";
+
+            if (hdr[0] == 0 && hdr[1] == 0 && hdr[2] == 0 && hdr[3] == 1) return "mov"; // extended-size
+
+            return "mov"; // safe default for .mov / .mp4
+        }
+        catch
+        {
+            return "mov";
         }
     }
 
