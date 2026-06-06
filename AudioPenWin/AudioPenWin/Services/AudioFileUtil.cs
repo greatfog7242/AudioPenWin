@@ -27,20 +27,42 @@ public static class AudioFileUtil
 
         if (ext is ".mov" or ".mp4")
         {
-            // Zoom recordings: moov atom at end of file + variable resolution/fps mid-stream.
-            // Pass 1: remux with permissive flags — reads moov from tail, discards corrupt
-            //         packets, copies streams without decoding (so variable layout is invisible),
-            //         and writes a clean MP4 with moov at the front (faststart).
-            // Pass 2: extract audio from the normalized file with a straightforward command.
+            // Zoom recordings: moov atom at end + variable resolution/fps mid-stream.
+            //
+            // Pass 1 (remux): normalize the container into a clean MP4.
+            //   -probesize/-analyzeduration 100M : scan enough data to find streams in large files
+            //   +igndts                          : ignore invalid decode timestamps Zoom embeds
+            //   +genpts+discardcorrupt           : regenerate PTS, skip corrupt packets
+            //   -err_detect ignore_err           : tolerate container-level errors during copy
+            //   -c copy -movflags +faststart     : stream-copy (no decode), moov at front
+            //
+            // Pass 2 (extract): pull audio from the clean copy.
+            //
+            // If pass 1 fails (e.g. moov truly unreadable), fall back to a single-pass
+            // extraction that forces the MOV demuxer with -f mov, bypassing format detection.
+
             var tempPath = Path.ChangeExtension(
                 Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), ".mp4");
             try
             {
-                await RunAsync(FindFfmpeg(),
-                    $"-y -fflags +genpts+discardcorrupt -err_detect ignore_err " +
+                var remuxOk = await TryRunAsync(FindFfmpeg(),
+                    $"-y -probesize 100M -analyzeduration 100M " +
+                    $"-fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
                     $"-i \"{videoPath}\" -c copy -movflags +faststart \"{tempPath}\"", ct);
-                await RunAsync(FindFfmpeg(),
-                    $"-y -i \"{tempPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+
+                if (remuxOk)
+                {
+                    await RunAsync(FindFfmpeg(),
+                        $"-y -i \"{tempPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                }
+                else
+                {
+                    // Remux failed — force MOV demuxer and extract audio directly
+                    await RunAsync(FindFfmpeg(),
+                        $"-y -probesize 100M -analyzeduration 100M " +
+                        $"-f mov -fflags +genpts+discardcorrupt+igndts -err_detect ignore_err " +
+                        $"-i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                }
             }
             finally
             {
@@ -49,9 +71,15 @@ public static class AudioFileUtil
         }
         else
         {
-            var args = $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"";
-            await RunAsync(FindFfmpeg(), args, ct);
+            await RunAsync(FindFfmpeg(),
+                $"-y -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
         }
+    }
+
+    private static async Task<bool> TryRunAsync(string exe, string args, CancellationToken ct)
+    {
+        try { await RunAsync(exe, args, ct); return true; }
+        catch { return false; }
     }
 
     public static async Task ExtractPcmAsync(string inputPath, string outputPcmPath, CancellationToken ct = default)
@@ -155,7 +183,7 @@ public static class AudioFileUtil
         if (proc.ExitCode != 0)
         {
             var err = await stderr;
-            throw new Exception($"ffmpeg failed: {err[..Math.Min(300, err.Length)]}");
+            throw new Exception($"ffmpeg failed: {err[..Math.Min(1000, err.Length)]}");
         }
     }
 }
