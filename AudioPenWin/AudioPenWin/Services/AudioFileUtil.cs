@@ -27,15 +27,17 @@ public static class AudioFileUtil
 
         if (ext is ".mov" or ".mp4")
         {
-            // Zoom recordings often start with a QuickTime `wide` atom (8 bytes) before an
-            // extended-size `mdat`, so FFmpeg's format prober scores the file at 1 ("low
-            // confidence") and then the MOV demuxer fails to find moov. The fix is to read
-            // the magic bytes ourselves and pass an explicit -f <format> to bypass the prober.
+            // Zoom recordings often start with a QuickTime `wide` atom before an extended-size
+            // mdat, causing FFmpeg's prober to score the file at 1 and then fail to find moov.
+            // Strategy:
+            //   1. Sniff magic bytes to pick the most likely format specifier.
+            //   2. Try a remux pass (-map 0 -c copy -movflags +faststart) to normalise the
+            //      container into a clean MP4 with moov at the front.
+            //   3. If remux works, extract audio from the clean copy.
+            //   4. If remux fails, cascade through plausible format overrides for direct
+            //      extraction — the container may not match its .mov/.mp4 extension.
             var fmt = await SniffContainerFormatAsync(videoPath);
 
-            // Pass 1: remux into a clean MP4 with moov at the front (stream-copy, no decode).
-            // Pass 2: extract audio from the normalized copy.
-            // Fallback: if remux fails, attempt direct audio extraction with the same -f hint.
             var tempPath = Path.ChangeExtension(
                 Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), ".mp4");
             try
@@ -47,17 +49,27 @@ public static class AudioFileUtil
                 {
                     await RunAsync(FindFfmpeg(),
                         $"-y -i \"{tempPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
-                }
-                else
-                {
-                    await RunAsync(FindFfmpeg(),
-                        $"-y -f {fmt} -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct);
+                    return;
                 }
             }
             finally
             {
                 if (File.Exists(tempPath)) File.Delete(tempPath);
             }
+
+            // Remux failed — try direct audio extraction with each plausible format.
+            var candidates = new[] { fmt, "mpegts", "avi", "matroska" }.Distinct();
+            foreach (var f in candidates)
+            {
+                if (await TryRunAsync(FindFfmpeg(),
+                    $"-y -f {f} -i \"{videoPath}\" -vn -acodec aac -b:a 192k \"{outputM4aPath}\"", ct))
+                    return;
+            }
+
+            throw new Exception(
+                "Could not extract audio from this file. " +
+                "The recording may be incomplete (moov atom missing) — " +
+                "ensure the Zoom recording has fully saved before importing.");
         }
         else
         {
