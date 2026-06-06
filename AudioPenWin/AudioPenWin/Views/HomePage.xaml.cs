@@ -1,4 +1,5 @@
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -222,34 +223,43 @@ public sealed partial class HomePage : Page
         string audioPath;
         string sourceType;
 
+        // Show busy overlay and wait cursor while FFmpeg is running
+        ImportStatusText.Text = isVideo ? "Processing video…" : "Importing…";
+        ImportOverlay.Visibility = Visibility.Visible;
+        BtnImport.IsEnabled = false;
+        BtnRecord.IsEnabled = false;
+        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Wait);
+
         try
         {
-            if (isVideo)
+            try
             {
-                sourceType = "VIDEO_IMPORT";
-                audioPath = System.IO.Path.Combine(dir, "audio.m4a");
-                await AudioFileUtil.ExtractAudioFromVideoAsync(sourcePath, audioPath);
+                if (isVideo)
+                {
+                    sourceType = "VIDEO_IMPORT";
+                    audioPath = System.IO.Path.Combine(dir, "audio.m4a");
+                    await AudioFileUtil.ExtractAudioFromVideoAsync(sourcePath, audioPath);
+                }
+                else
+                {
+                    sourceType = "AUDIO_IMPORT";
+                    var destName = "audio" + ext;
+                    audioPath = System.IO.Path.Combine(dir, destName);
+                    File.Copy(sourcePath, audioPath, overwrite: true);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                sourceType = "AUDIO_IMPORT";
-                var destName = "audio" + ext;
-                audioPath = System.IO.Path.Combine(dir, destName);
-                File.Copy(sourcePath, audioPath, overwrite: true);
+                try { Directory.Delete(dir, recursive: true); } catch { }
+                await new ContentDialog
+                {
+                    Title = "Import failed",
+                    Content = ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = XamlRoot
+                }.ShowAsync();
+                return;
             }
-        }
-        catch (Exception ex)
-        {
-            try { Directory.Delete(dir, recursive: true); } catch { }
-            await new ContentDialog
-            {
-                Title = "Import failed",
-                Content = ex.Message,
-                CloseButtonText = "OK",
-                XamlRoot = XamlRoot
-            }.ShowAsync();
-            return;
-        }
 
         var title = System.IO.Path.GetFileNameWithoutExtension(sourcePath);
         var entity = new RecordingEntity
@@ -272,5 +282,13 @@ public sealed partial class HomePage : Page
 
         await ViewModel.LoadAsync();
         App.MainWindow.Navigate(typeof(PlaybackPage), id);
+        }
+        finally
+        {
+            ImportOverlay.Visibility = Visibility.Collapsed;
+            BtnImport.IsEnabled = true;
+            BtnRecord.IsEnabled = true;
+            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        }
     }
 }

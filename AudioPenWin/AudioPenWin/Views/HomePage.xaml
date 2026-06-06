@@ -18,6 +18,22 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- Import busy overlay — spans all rows, shown while FFmpeg is running -->
+        <Grid x:Name="ImportOverlay"
+              Grid.RowSpan="3"
+              Visibility="Collapsed"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Opacity="0.92"
+              Canvas.ZIndex="99">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+                <ProgressRing IsActive="True" Width="52" Height="52"/>
+                <TextBlock x:Name="ImportStatusText"
+                           Text="Importing…"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+
         <!-- Header -->
         <Grid Grid.Row="0" Padding="24,20,24,0">
             <Grid.ColumnDefinitions>
